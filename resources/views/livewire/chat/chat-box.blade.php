@@ -1,21 +1,4 @@
-<div x-data="{
-    scrollToBottom() {
-        const container = document.getElementById('conversation');
-        if (container) {
-            container.scrollTop = container.scrollHeight;
-        }
-    }
-}" x-init="// Scroll to bottom on initial load
-$nextTick(() => {
-    scrollToBottom();
-});
-
-// Listen for Livewire scroll-bottom event
-$wire.on('scroll-bottom', () => {
-    $nextTick(() => {
-        scrollToBottom();
-    });
-});" class="w-full h-full flex flex-col bg-gray-900 text-white">
+<div class="w-full h-full flex flex-col bg-gray-900 text-white">
 
     {{-- header --}}
     <header class="shrink-0 sticky top-0 z-10 border-b border-gray-700 bg-gray-900">
@@ -35,14 +18,35 @@ $wire.on('scroll-bottom', () => {
 
             <div class="min-w-0 flex-1">
                 <h6 class="font-bold truncate text-base lg:text-lg">
-                    {{ $selectedConversation->GetReceiver()->email }}
+                    {{ $selectedConversation->GetReceiver()->name }}
                 </h6>
             </div>
         </div>
     </header>
 
+    {{-- Loading indicator --}}
+    @if ($loading)
+        <div class="py-2 text-center">
+            <div class="inline-flex items-center gap-2 text-white text-sm">
+                <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading more messages...
+            </div>
+        </div>
+    @endif
+
     {{-- Main conversation area with scroll --}}
-    <main id="conversation" class="flex-1 overflow-y-auto overscroll-contain p-3 md:p-4 space-y-3 min-h-0">
+    <main
+     @scroll.throttle.250ms="
+        const element = $event.target;
+        // Load more when scrolled near the top (for older messages)
+        if (element.scrollTop <= 50) {
+            $wire.loadmore();
+        }
+    "
+    id="conversation" class="flex-1 overflow-y-auto overscroll-contain p-3 md:p-4 space-y-3 min-h-0">
         @if ($loadedMessages && $loadedMessages->count() > 0)
             @php
                 $previousMessage = null;
@@ -101,7 +105,7 @@ $wire.on('scroll-bottom', () => {
                             {{-- Read status for sent messages --}}
                             @if ($message->sender_id === auth()->id())
                                 @if ($message->isRead())
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                    <svg class="text-blue-500" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                                         fill="currentColor" class="bi bi-check-all" viewBox="0 0 16 16">
                                         <path
                                             d="M8.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L2.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093L8.95 4.992zm-.92 5.14.92.92a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 1 0-1.091-1.028L9.477 9.417l-.485-.486z" />
@@ -132,12 +136,13 @@ $wire.on('scroll-bottom', () => {
     {{-- send message --}}
     <footer class="shrink-0 border-t border-gray-700 bg-gray-900">
         <div class="p-3 md:p-4">
-            <form wire:submit.prevent="sendMessage">
+            <form wire:submit="sendMessage">
                 @csrf
                 <div class="flex gap-2 md:gap-3 w-full">
-                    <input wire:model="body" type="text" placeholder="Type your message..." maxlength="1700"
-                        class="flex-1 bg-gray-800 border-0 rounded-xl px-4 py-3 text-sm md:text-base text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-
+                     <input wire:model="body" type="text" placeholder="Type your message..." 
+            x-ref="messageInput"
+            @clear-input.window="$refs.messageInput.value = ''; $refs.messageInput.focus();"
+            class="flex-1 bg-gray-800 border-0 rounded-xl px-4 py-3 text-sm md:text-base text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     <button type="submit"
                         class="shrink-0 bg-blue-600 hover:bg-blue-700 rounded-xl px-4 md:px-6 py-3 transition-colors duration-200 flex items-center justify-center text-white font-medium">
                         <span class="hidden md:inline">Send</span>
