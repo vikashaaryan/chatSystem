@@ -1,4 +1,4 @@
-<div class="w-full h-full flex flex-col bg-gray-900 text-white">
+<div class=" h-full flex flex-col bg-gray-900 text-white">
 
     {{-- header --}}
     <header class="shrink-0 sticky top-0 z-10 border-b border-gray-700 bg-gray-900">
