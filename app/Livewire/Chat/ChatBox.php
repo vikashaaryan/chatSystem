@@ -8,24 +8,24 @@ use Livewire\Component;
 class ChatBox extends Component
 {
     public $selectedConversation;
-
     public $body;
-
     public $loadedMessages;
-
     public $paginate_var = 9; 
-    
-    public $loading = false; 
+    public $loading = false;
+    public $lastMessageId = null;
 
-    protected $listeners=[
-        'refresh' => '$refresh'
+    protected $listeners = [
+        'refresh' => '$refresh',
     ];
 
     public function mount()
     {
         $this->loadMessages();
+        // Store the ID of the latest message
+        $this->lastMessageId = $this->loadedMessages->last()?->id;
     }
 
+    // ADD THIS METHOD - It's being called from your Blade view
     public function loadmore()
     {
         if ($this->loading) {
@@ -47,6 +47,26 @@ class ChatBox extends Component
         $this->loading = false;
     }
 
+    // Add polling
+    public function checkForNewMessages()
+    {
+        if (!$this->selectedConversation) return;
+
+        $latestMessage = Message::where('conversation_id', $this->selectedConversation->id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($latestMessage && $latestMessage->id != $this->lastMessageId) {
+            $this->loadMessages();
+            $this->lastMessageId = $latestMessage->id;
+            
+            if ($latestMessage->sender_id != auth()->id()) {
+                $this->dispatch('scroll-to-bottom');
+            }
+        }
+        Message::where('conversation_id',$this->selectedConversation->id)->where('receiver_id',auth()->id())->where('read_at')->update(['read_at'=>now()]);
+    }
+
     public function loadMessages()
     {
         $count = Message::where('conversation_id', $this->selectedConversation->id)->count();
@@ -58,6 +78,9 @@ class ChatBox extends Component
             ->skip($skip)
             ->take($this->paginate_var)
             ->get();
+
+        // Update last message ID
+        $this->lastMessageId = $this->loadedMessages->last()?->id;
 
         return $this->loadedMessages;
     }
@@ -75,18 +98,14 @@ class ChatBox extends Component
             'body' => $this->body,
         ]);
 
-             // Use fill() method
-     $this->dispatch('clear-input');
-
-    $this->reset('body'); // This might work after resetValidation
-
-
+        $this->dispatch('clear-input');
+        $this->reset('body');
         $this->loadMessages();
+        
         $this->selectedConversation->updated_at = now();
         $this->selectedConversation->save();
 
         $this->dispatch('refresh')->to('chat.chat-list');
-
         $this->dispatch('scroll-to-bottom');
     }
 

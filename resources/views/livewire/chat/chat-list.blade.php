@@ -39,24 +39,34 @@
         @if ($conversations)
 
             @foreach ($conversations as $conversation)
-                <!-- Chat 1 -->
                 <li id="conversation-{{ $conversation->id }}" wire:key="{{ $conversation->id }}"
-                    class="py-3  bg-gray-800 rounded-2xl flex gap-4 cursor-pointer hover:bg-gray-700 transition relative {{ $conversation->id == $selectedConversation?->id ? 'bg-gray-700' : '' }}">
-                    <img src="https://picsum.photos/100/50" class="w-12 h-12 rounded-full object-cover" />
+                    class="py-3 bg-gray-800 rounded-2xl flex gap-4 cursor-pointer hover:bg-gray-700 transition relative {{ $conversation->id == $selectedConversation?->id ? 'bg-gray-700' : '' }}">
+                    <!-- Clickable image -->
+                    <a href="{{ route('chat', $conversation->id) }}" class="flex-shrink-0">
+                        <img src="https://picsum.photos/100/50" class="w-12 h-12 rounded-full object-cover" />
+                    </a>
 
-                    <a href="{{ route('chat', $conversation->id) }}" class="w-full">
+                    <div class="flex-1 min-w-0">
                         <div class="flex justify-between items-center">
-                            <h6 class="truncate font-medium tracking-wider text-gray-200">
-                                {{ $conversation->GetReceiver()->name }}</h6>
+                            <!-- Clickable name -->
+                            <a href="{{ route('chat', $conversation->id) }}" class="flex-1 min-w-0 mr-2">
+                                <h6 class="truncate font-medium tracking-wider text-gray-200">
+                                    {{ $conversation->GetReceiver()->name }}
+                                </h6>
+                            </a>
+
                             <div class="flex items-center gap-2">
+                                <!-- Clickable timestamp -->
+                                <a href="{{ route('chat', $conversation->id) }}"
+                                    class="text-gray-400 hover:text-gray-200">
+                                    <small>{{ $conversation->messages?->last()?->created_at?->shortAbsoluteDiffForHumans() }}
+                                        ago</small>
+                                </a>
 
-                                <small
-                                    class="text-gray-400">{{ $conversation->messages?->last()?->created_at?->shortAbsoluteDiffForHumans() }}ago</small>
-
-                                <!-- Dropdown -->
+                                <!-- Dropdown - NOT clickable for navigation -->
                                 <x-dropdown align="right" width="48">
                                     <x-slot name="trigger">
-                                        <button class="hover:text-blue-500 transition">
+                                        <button class="hover:text-blue-500 transition focus:outline-none">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                                                 fill="currentColor" class="bi bi-three-dots-vertical">
                                                 <path
@@ -67,7 +77,7 @@
 
                                     <x-slot name="content">
                                         <div class="bg-gray-900 text-gray-200 shadow-xl rounded-md py-1">
-                                            <button
+                                            <button type="button"
                                                 class="flex items-center gap-3 w-full px-4 py-2 text-sm hover:bg-gray-700 transition">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                                                     fill="currentColor" class="bi bi-person-circle">
@@ -77,7 +87,7 @@
                                                 </svg>
                                                 View Profile
                                             </button>
-                                            <button
+                                            <button onclick="confirm('Are you Show you Want To Delete The Chat')" wire:click="deleteByUser('{{ encrypt($conversation->id) }}')" type="button"
                                                 class="flex items-center gap-3 w-full px-4 py-2 text-sm hover:bg-gray-700 transition">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                                                     fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
@@ -89,51 +99,48 @@
                                         </div>
                                     </x-slot>
                                 </x-dropdown>
-
                             </div>
                         </div>
 
-                        <div class="flex gap-x-2 items-center mt-1">
-                            <p class="truncate text-sm font-light grow text-gray-400">
-                                @if ($conversation->messages?->last())
-                                   
-                                    <span class="flex gap-2">
-
-                                        @if ($conversation->messages?->last()?->sender_id == auth()->id())
-                                            @if ($conversation->isLastMessageReadByUser())
-                                                <svg class="text-blue-500" xmlns="http://www.w3.org/2000/svg"
-                                                    width="20" height="20" fill="currentColor"
-                                                    class="bi bi-check-all" viewBox="0 0 16 16">
-                                                    <path
-                                                        d="M8.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L2.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093L8.95 4.992zm-.92 5.14.92.92a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 1 0-1.091-1.028L9.477 9.417l-.485-.486z" />
-                                                </svg>
-                                            @else
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                                                    fill="currentColor" class="bi bi-check text-gray-300"
-                                                    viewBox="0 0 16 16">
-                                                    <path
-                                                        d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z" />
-                                                </svg>
+                        <!-- Clickable message preview -->
+                        <a href="{{ route('chat', $conversation->id) }}" class="block">
+                            <div class="flex gap-x-2 items-center mt-1">
+                                <p class="truncate text-sm font-light grow text-gray-400">
+                                    @if ($conversation->messages?->last())
+                                        <span class="flex gap-2 items-center">
+                                            @if ($conversation->messages?->last()?->sender_id == auth()->id())
+                                                @if ($conversation->isLastMessageReadByUser())
+                                                    <svg class="text-blue-500" xmlns="http://www.w3.org/2000/svg"
+                                                        width="20" height="20" fill="currentColor"
+                                                        class="bi bi-check-all" viewBox="0 0 16 16">
+                                                        <path
+                                                            d="M8.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L2.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093L8.95 4.992zm-.92 5.14.92.92a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 1 0-1.091-1.028L9.477 9.417l-.485-.486z" />
+                                                    </svg>
+                                                @else
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20"
+                                                        height="20" fill="currentColor"
+                                                        class="bi bi-check text-gray-300" viewBox="0 0 16 16">
+                                                        <path
+                                                            d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z" />
+                                                    </svg>
+                                                @endif
                                             @endif
-                                        @endif
-                                        {{ Str::limit($conversation->messages->last()->body, 40) }}
+                                            {{ Str::limit($conversation->messages->last()->body, 40) }}
+                                        </span>
+                                    @else
+                                        Start a conversation...
+                                    @endif
+                                </p>
 
+                                @if ($conversation->unreadMessageCount() > 0)
+                                    <span
+                                        class="font-bold px-2 py-1 text-xs rounded-full bg-blue-600 text-white min-w-[20px] h-5 flex items-center justify-center">
+                                        {{ $conversation->unreadMessageCount() }}
                                     </span>
-                                @else
-                                    Start a conversation...
                                 @endif
-                            </p>
-
-                            @if ($conversation->unreadMessageCount() > 0)
-                                <span
-                                    class="font-bold px-2 py-1 text-xs rounded-full bg-blue-600 text-white min-w-[20px] h-5 flex items-center justify-center">
-                                    {{ $conversation->unreadMessageCount() }}
-                                </span>
-                            @endif
-
-
-                        </div>
-                    </a>
+                            </div>
+                        </a>
+                    </div>
                 </li>
             @endforeach
         @else
