@@ -1,3 +1,4 @@
+{{-- this is chat list page  --}}
 <div class="w-full h-full flex flex-col text-gray-200">
 
     <!-- Header -->

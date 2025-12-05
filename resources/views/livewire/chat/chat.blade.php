@@ -1,3 +1,4 @@
+{{-- this is chat page where show all chat list  --}}
 <div class="text-white border border-white w-full h-full shadow-md fixed inset-0 lg:top-16  lg:h-[90%]  overflow-hidden">
     <div class="flex h-full">
         <div class="w-4/12 border-r border-white">

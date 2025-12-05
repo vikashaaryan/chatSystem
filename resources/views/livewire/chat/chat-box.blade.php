@@ -1,3 +1,5 @@
+    {{-- this chat box  where send received chat  --}}
+    
     <div class=" h-full flex flex-col bg-gray-900 text-white"  wire:poll="checkForNewMessages">
 
         {{-- header --}}
@@ -160,4 +162,4 @@
                 </form>
             </div>
         </footer>
-    </div>
+</div>

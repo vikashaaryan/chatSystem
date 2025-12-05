@@ -1,3 +1,4 @@
+{{-- this is index page --}}
 <div class="text-white fixed flex border-white   border w-full h-full shadow-md ">
     <div class="w-6/12 border-r bodrer-white">
       <livewire:chat.chat-list>
